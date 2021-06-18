@@ -10,10 +10,10 @@ use dusk_bls12_381::BlsScalar;
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub(crate) struct ProverKey {
-    pub(crate) left_sigma: (Polynomial, Evaluations),
-    pub(crate) right_sigma: (Polynomial, Evaluations),
-    pub(crate) out_sigma: (Polynomial, Evaluations),
-    pub(crate) fourth_sigma: (Polynomial, Evaluations),
+    pub(crate) left_sigma: (Polynomial, Evaluations, Evaluations),
+    pub(crate) right_sigma: (Polynomial, Evaluations, Evaluations),
+    pub(crate) out_sigma: (Polynomial, Evaluations, Evaluations),
+    pub(crate) fourth_sigma: (Polynomial, Evaluations, Evaluations),
     pub(crate) linear_evaluations: Evaluations,
     /* Evaluations of f(x) = X
      * [XXX: Remove this and

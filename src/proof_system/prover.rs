@@ -210,10 +210,10 @@ impl Prover {
                 &beta,
                 &gamma,
                 (
-                    &prover_key.permutation.left_sigma.0,
-                    &prover_key.permutation.right_sigma.0,
-                    &prover_key.permutation.out_sigma.0,
-                    &prover_key.permutation.fourth_sigma.0,
+                    &prover_key.permutation.left_sigma.2.evals,
+                    &prover_key.permutation.right_sigma.2.evals,
+                    &prover_key.permutation.out_sigma.2.evals,
+                    &prover_key.permutation.fourth_sigma.2.evals,
                 ),
             ),
         );

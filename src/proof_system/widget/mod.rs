@@ -333,23 +333,26 @@ pub(crate) mod alloc {
             );
             writer.write(&self.permutation.left_sigma.0.to_var_bytes());
             writer.write(&self.permutation.left_sigma.1.to_var_bytes());
-
+            writer.write(&self.permutation.left_sigma.2.to_var_bytes());
             writer.write(
                 &(self.permutation.right_sigma.0.len() as u64).to_bytes(),
             );
             writer.write(&self.permutation.right_sigma.0.to_var_bytes());
             writer.write(&self.permutation.right_sigma.1.to_var_bytes());
+            writer.write(&self.permutation.right_sigma.2.to_var_bytes());
 
             writer
                 .write(&(self.permutation.out_sigma.0.len() as u64).to_bytes());
             writer.write(&self.permutation.out_sigma.0.to_var_bytes());
             writer.write(&self.permutation.out_sigma.1.to_var_bytes());
+            writer.write(&self.permutation.out_sigma.2.to_var_bytes());
 
             writer.write(
                 &(self.permutation.fourth_sigma.0.len() as u64).to_bytes(),
             );
             writer.write(&self.permutation.fourth_sigma.0.to_var_bytes());
             writer.write(&self.permutation.fourth_sigma.1.to_var_bytes());
+            writer.write(&self.permutation.fourth_sigma.2.to_var_bytes());
 
             writer.write(&self.permutation.linear_evaluations.to_var_bytes());
 
@@ -440,20 +443,31 @@ pub(crate) mod alloc {
                 (q_variable_group_add_poly, q_variable_group_add_evals);
 
             let left_sigma_poly = poly_from_reader(&mut buffer)?;
-            let left_sigma_evals = evals_from_reader(&mut buffer)?;
-            let left_sigma = (left_sigma_poly, left_sigma_evals);
+            let left_sigma_evals_n = evals_from_reader(&mut buffer)?;
+            let left_sigma_evals_4n = evals_from_reader(&mut buffer)?;
+            let left_sigma =
+                (left_sigma_poly, left_sigma_evals_n, left_sigma_evals_4n);
 
             let right_sigma_poly = poly_from_reader(&mut buffer)?;
-            let right_sigma_evals = evals_from_reader(&mut buffer)?;
-            let right_sigma = (right_sigma_poly, right_sigma_evals);
+            let right_sigma_evals_n = evals_from_reader(&mut buffer)?;
+            let right_sigma_evals_4n = evals_from_reader(&mut buffer)?;
+            let right_sigma =
+                (right_sigma_poly, right_sigma_evals_n, right_sigma_evals_4n);
 
             let out_sigma_poly = poly_from_reader(&mut buffer)?;
-            let out_sigma_evals = evals_from_reader(&mut buffer)?;
-            let out_sigma = (out_sigma_poly, out_sigma_evals);
+            let out_sigma_evals_n = evals_from_reader(&mut buffer)?;
+            let out_sigma_evals_4n = evals_from_reader(&mut buffer)?;
+            let out_sigma =
+                (out_sigma_poly, out_sigma_evals_n, out_sigma_evals_4n);
 
             let fourth_sigma_poly = poly_from_reader(&mut buffer)?;
-            let fourth_sigma_evals = evals_from_reader(&mut buffer)?;
-            let fourth_sigma = (fourth_sigma_poly, fourth_sigma_evals);
+            let fourth_sigma_evals_n = evals_from_reader(&mut buffer)?;
+            let fourth_sigma_evals_4n = evals_from_reader(&mut buffer)?;
+            let fourth_sigma = (
+                fourth_sigma_poly,
+                fourth_sigma_evals_n,
+                fourth_sigma_evals_4n,
+            );
 
             let perm_linear_evaluations = evals_from_reader(&mut buffer)?;
 
@@ -530,6 +544,11 @@ mod test {
         (polynomial, rand_evaluations(n))
     }
 
+    fn rand_poly_eval_eval(n: usize) -> (Polynomial, Evaluations, Evaluations) {
+        let polynomial = Polynomial::rand(n, &mut OsRng);
+        (polynomial, rand_evaluations(n), rand_evaluations(4 * n))
+    }
+
     fn rand_evaluations(n: usize) -> Evaluations {
         let domain = EvaluationDomain::new(4 * n).unwrap();
         let values: Vec<_> =
@@ -558,10 +577,10 @@ mod test {
 
         let q_variable_group_add = rand_poly_eval(n);
 
-        let left_sigma = rand_poly_eval(n);
-        let right_sigma = rand_poly_eval(n);
-        let out_sigma = rand_poly_eval(n);
-        let fourth_sigma = rand_poly_eval(n);
+        let left_sigma = rand_poly_eval_eval(n);
+        let right_sigma = rand_poly_eval_eval(n);
+        let out_sigma = rand_poly_eval_eval(n);
+        let fourth_sigma = rand_poly_eval_eval(n);
         let linear_evaluations = rand_evaluations(n);
 
         let v_h_coset_4n = rand_evaluations(n);

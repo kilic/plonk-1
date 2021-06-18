@@ -35,6 +35,13 @@ pub(crate) struct SelectorPolynomials {
     fourth_sigma: Polynomial,
 }
 
+pub(crate) struct Mappings {
+    left_sigma: Evaluations,
+    right_sigma: Evaluations,
+    out_sigma: Evaluations,
+    fourth_sigma: Evaluations,
+}
+
 impl StandardComposer {
     /// Pads the circuit to the next power of two.
     ///
@@ -103,7 +110,7 @@ impl StandardComposer {
         commit_key: &CommitKey,
         transcript: &mut Transcript,
     ) -> Result<ProverKey, Error> {
-        let (_, selectors, domain) =
+        let (_, selectors, mappings, domain) =
             self.preprocess_shared(commit_key, transcript)?;
 
         let domain_4n = EvaluationDomain::new(4 * domain.size())?;
@@ -168,6 +175,7 @@ impl StandardComposer {
             domain_4n.coset_fft(&selectors.fourth_sigma),
             domain_4n,
         );
+
         // XXX: Remove this and compute it on the fly
         let linear_eval_4n = Evaluations::from_vec_and_domain(
             domain_4n.coset_fft(&[BlsScalar::zero(), BlsScalar::one()]),
@@ -209,10 +217,26 @@ impl StandardComposer {
 
         // Prover Key for permutation argument
         let permutation_prover_key = widget::permutation::ProverKey {
-            left_sigma: (selectors.left_sigma, left_sigma_eval_4n),
-            right_sigma: (selectors.right_sigma, right_sigma_eval_4n),
-            out_sigma: (selectors.out_sigma, out_sigma_eval_4n),
-            fourth_sigma: (selectors.fourth_sigma, fourth_sigma_eval_4n),
+            left_sigma: (
+                selectors.left_sigma,
+                left_sigma_eval_4n,
+                mappings.left_sigma,
+            ),
+            right_sigma: (
+                selectors.right_sigma,
+                right_sigma_eval_4n,
+                mappings.right_sigma,
+            ),
+            out_sigma: (
+                selectors.out_sigma,
+                out_sigma_eval_4n,
+                mappings.out_sigma,
+            ),
+            fourth_sigma: (
+                selectors.fourth_sigma,
+                fourth_sigma_eval_4n,
+                mappings.fourth_sigma,
+            ),
             linear_evaluations: linear_eval_4n,
         };
 
@@ -249,7 +273,7 @@ impl StandardComposer {
         commit_key: &CommitKey,
         transcript: &mut Transcript,
     ) -> Result<widget::VerifierKey, Error> {
-        let (verifier_key, _, _) =
+        let (verifier_key, _, _, _) =
             self.preprocess_shared(commit_key, transcript)?;
         Ok(verifier_key)
     }
@@ -263,7 +287,12 @@ impl StandardComposer {
         commit_key: &CommitKey,
         transcript: &mut Transcript,
     ) -> Result<
-        (widget::VerifierKey, SelectorPolynomials, EvaluationDomain),
+        (
+            widget::VerifierKey,
+            SelectorPolynomials,
+            Mappings,
+            EvaluationDomain,
+        ),
         Error,
     > {
         let domain = EvaluationDomain::new(self.circuit_size())?;
@@ -305,7 +334,18 @@ impl StandardComposer {
             right_sigma_poly,
             out_sigma_poly,
             fourth_sigma_poly,
+            left_sigma_mappings,
+            right_sigma_mappings,
+            out_sigma_mappings,
+            fourth_sigma_mappings,
         ) = self.perm.compute_sigma_polynomials(self.n, &domain);
+
+        let mappings = Mappings {
+            left_sigma: left_sigma_mappings,
+            right_sigma: right_sigma_mappings,
+            out_sigma: out_sigma_mappings,
+            fourth_sigma: fourth_sigma_mappings,
+        };
 
         let q_m_poly_commit = commit_key.commit(&q_m_poly).unwrap_or_default();
         let q_l_poly_commit = commit_key.commit(&q_l_poly).unwrap_or_default();
@@ -401,7 +441,7 @@ impl StandardComposer {
         // Add the circuit description to the transcript
         verifier_key.seed_transcript(transcript);
 
-        Ok((verifier_key, selectors, domain))
+        Ok((verifier_key, selectors, mappings, domain))
     }
 }
 
